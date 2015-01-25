@@ -1,0 +1,18 @@
+*.iml
+.idea/
+target/
+domain/target/
+persistence/target/
+service/target/
+web/target/
+*.properties
+!messages*
+
+# Logging-related
+logback.xml
+logback-test.xml
+/logs
+/node_modules
+
+
+schema.sql
