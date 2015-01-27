@@ -1,4 +1,4 @@
-package friends.reader.gdfreader;
+package friends.reader.parser;
 
 import friends.reader.domain.Friendship;
 import friends.reader.domain.Person;
@@ -12,7 +12,7 @@ public class PeopleAndFriendshipsRetriever {
 
     private FileLinesParser activeFileLinesParser = peopleFileLinesParser;
 
-    public void retrieve(String line) {
+    public void parseLine(String line) {
         if (line.startsWith("nodedef")) {
             activeFileLinesParser = peopleFileLinesParser;
         } else if (line.startsWith("edgedef")) {

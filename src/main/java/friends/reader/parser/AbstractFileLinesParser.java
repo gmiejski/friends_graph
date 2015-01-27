@@ -1,4 +1,4 @@
-package friends.reader.gdfreader;
+package friends.reader.parser;
 
 import java.util.ArrayList;
 import java.util.List;

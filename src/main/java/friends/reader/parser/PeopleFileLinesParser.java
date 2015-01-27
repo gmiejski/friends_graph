@@ -1,4 +1,4 @@
-package friends.reader.gdfreader;
+package friends.reader.parser;
 
 import friends.reader.domain.Person;
 import friends.reader.domain.Sex;

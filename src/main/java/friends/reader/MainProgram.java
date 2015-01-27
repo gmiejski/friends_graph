@@ -5,7 +5,7 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import friends.reader.domain.Friendship;
 import friends.reader.domain.Person;
-import friends.reader.gdfreader.PeopleAndFriendshipsRetriever;
+import friends.reader.parser.PeopleAndFriendshipsRetriever;
 import org.neo4j.rest.graphdb.RestAPI;
 import org.neo4j.rest.graphdb.RestAPIFacade;
 import org.neo4j.rest.graphdb.entity.RestNode;
@@ -15,9 +15,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static friends.reader.domain.Friendship.FRIENDSHIP_LABEL;
+import static java.util.stream.Collectors.toMap;
 
 
 public class MainProgram {
@@ -30,20 +30,19 @@ public class MainProgram {
         RestAPI graphDb = new RestAPIFacade(SERVER_ROOT_URI);
 
         try {
-            List<String> strings = Files.readAllLines(Paths.get("./src/main/resources/friends.gdf"));
+            List<String> lines = Files.readAllLines(Paths.get("./src/main/resources/friends.gdf"));
             PeopleAndFriendshipsRetriever peopleAndFriendshipsRetriever = new PeopleAndFriendshipsRetriever();
 
-            strings.stream().forEach(peopleAndFriendshipsRetriever::retrieve);
+            lines.stream().forEach(peopleAndFriendshipsRetriever::parseLine);
 
             List<Friendship> friendships = peopleAndFriendshipsRetriever.getFriendships();
             List<Person> people = peopleAndFriendshipsRetriever.getPeople();
 
-            Map<String, RestNode> nodes = people.stream().collect(Collectors.toMap(Person::getId, x -> createPersonNode(graphDb, x)));
-
+            Map<String, RestNode> peopleNodesById = people.stream().collect(toMap(Person::getId, x -> createPersonNode(graphDb, x)));
+            friendships.stream().forEach(friendship -> addFriendshipEdge(graphDb, peopleNodesById.get(friendship.getFriendId1()), peopleNodesById.get(friendship.getFriendId2())));
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 
     private static void addFriendshipEdge(RestAPI graphDb, RestNode personNode, RestNode personNode2) {
