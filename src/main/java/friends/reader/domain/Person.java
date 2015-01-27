@@ -1,11 +1,7 @@
 package friends.reader.domain;
 
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class Person {
 
@@ -16,12 +12,18 @@ public class Person {
     private String surname;
     private Sex sex;
     private Set<Person> friends;
+    private String id;
 
-    public Person(String firstname, String surname, Sex sex) {
+    public Person(String id, String firstname, String surname, Sex sex) {
+        this.id = id;
         this.firstname = firstname;
         this.surname = surname;
         this.sex = sex;
         friends = new HashSet<>();
+    }
+
+    public String getId() {
+        return id;
     }
 
     public String getFirstname() {
@@ -38,17 +40,10 @@ public class Person {
 
     public Map<String, Object> properties() {
         Map<String, Object> properties = new HashMap<>();
-
-        for (Method method : this.getClass().getMethods()) {
-            if (isGetterMethod(method)) {
-                try {
-                    Object result = method.invoke(this);
-                    properties.put(method.getName().substring(3).toLowerCase(), result);
-                } catch (IllegalAccessException | InvocationTargetException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+        properties.put("id", id);
+        properties.put("firstname", firstname);
+        properties.put("surname", surname);
+        properties.put("sex", Optional.ofNullable(sex).map(Sex::toString).orElse(""));
 
         return properties;
     }

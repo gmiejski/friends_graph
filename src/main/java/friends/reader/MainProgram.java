@@ -3,20 +3,19 @@ package friends.reader;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
+import friends.reader.domain.Friendship;
 import friends.reader.domain.Person;
-import friends.reader.domain.Sex;
-import org.neo4j.graphdb.GraphDatabaseService;
+import friends.reader.gdfreader.PeopleAndFriendshipsRetriever;
 import org.neo4j.rest.graphdb.RestAPI;
 import org.neo4j.rest.graphdb.RestAPIFacade;
-import org.neo4j.rest.graphdb.RestGraphDatabase;
 import org.neo4j.rest.graphdb.entity.RestNode;
-import org.neo4j.rest.graphdb.query.QueryEngine;
-import org.neo4j.rest.graphdb.query.RestCypherQueryEngine;
-import org.neo4j.rest.graphdb.util.QueryResult;
 
-import java.util.Collections;
-import java.util.Iterator;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static friends.reader.domain.Friendship.FRIENDSHIP_LABEL;
 
@@ -28,17 +27,23 @@ public class MainProgram {
 
     public static void main(String[] args) {
         checkIfConnectionIsEstablished();
-
         RestAPI graphDb = new RestAPIFacade(SERVER_ROOT_URI);
-        GraphDatabaseService graphDb2 = new RestGraphDatabase(SERVER_ROOT_URI);
 
-        Object totalNodesCount = getTotalNodesCount(graphDb);
-        System.out.print("Total nodes: " + totalNodesCount);
+        try {
+            List<String> strings = Files.readAllLines(Paths.get("./src/main/resources/friends.gdf"));
+            PeopleAndFriendshipsRetriever peopleAndFriendshipsRetriever = new PeopleAndFriendshipsRetriever();
 
-        RestNode personNode = createPersonNode(graphDb, createPerson("AAA", "BBB", Sex.MALE));
-        RestNode personNode2 = createPersonNode(graphDb, createPerson("CCC", "DDD", Sex.FEMALE));
+            strings.stream().forEach(peopleAndFriendshipsRetriever::retrieve);
 
-        addFriendshipEdge(graphDb, personNode, personNode2);
+            List<Friendship> friendships = peopleAndFriendshipsRetriever.getFriendships();
+            List<Person> people = peopleAndFriendshipsRetriever.getPeople();
+
+            Map<String, RestNode> nodes = people.stream().collect(Collectors.toMap(Person::getId, x -> createPersonNode(graphDb, x)));
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private static void addFriendshipEdge(RestAPI graphDb, RestNode personNode, RestNode personNode2) {
@@ -52,21 +57,6 @@ public class MainProgram {
         personNode.addLabel(() -> Person.LABEL);
 
         return personNode;
-    }
-
-    private static Person createPerson(String firstname, String lastname, Sex sex) {
-        return new Person(firstname, lastname, sex);
-    }
-
-    private static Integer getTotalNodesCount(RestAPI graphDb) {
-        QueryEngine engine = new RestCypherQueryEngine(graphDb);
-        QueryResult<Map<String, Object>> result = engine.query("match(n) return count(n) as total;", Collections.EMPTY_MAP);
-        Iterator<Map<String, Object>> iterator = result.iterator();
-        if (iterator.hasNext()) {
-            Map<String, Object> row = iterator.next();
-            return (Integer) row.get("total");
-        }
-        return null;
     }
 
     private static void checkIfConnectionIsEstablished() {
