@@ -16,3 +16,7 @@ logback-test.xml
 
 
 schema.sql
+
+# friends-related files
+*.gdf
+*.tab
